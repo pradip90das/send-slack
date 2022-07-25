@@ -19,6 +19,7 @@ type Status struct {
 }
 type cmdFlags struct {
 	inputFile string
+	resultURL string
 }
 
 func main() {
@@ -35,7 +36,7 @@ func initRootCommand() *cobra.Command {
 		Use:  "send-slack",
 		Long: "send slack message with data retrived from status file",
 		Run: func(cmd *cobra.Command, args []string) {
-			sendSlack(flags.inputFile)
+			sendSlack(flags)
 		},
 	}
 	rootCmd.PersistentFlags().StringVarP(&flags.inputFile,
@@ -44,22 +45,27 @@ func initRootCommand() *cobra.Command {
 		"",
 		"the json input file")
 	rootCmd.MarkPersistentFlagRequired("input")
-
+	rootCmd.PersistentFlags().StringVarP(&flags.resultURL,
+		"url",
+		"u",
+		"",
+		"result url")
 	return rootCmd
 }
 
-func sendSlack(statusFile string) {
-	status := readStatus(statusFile)
+func sendSlack(flags *cmdFlags) {
+	status := readStatus(flags.inputFile)
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	channelID := os.Getenv("SLACK_CHANNEL_ID")
 
 	client := slack.New(token, slack.OptionDebug(true))
 
 	header := slack.Attachment{
-		Pretext: ":fire:  Agni E2E Report  :fire:",
+		Pretext: fmt.Sprintf(":fire:  Agni E2E Report : <%s> ", flags.resultURL),
 		Text:    time.Now().Format(time.ANSIC),
 		Color:   "#b380ff",
 	}
+
 	total := slack.Attachment{
 		Color: "#b380ff",
 		Text:  fmt.Sprintf("TOTAL : %d", status.Total),
