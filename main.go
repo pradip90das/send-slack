@@ -94,6 +94,7 @@ func sendSlack(flags *cmdFlags) {
 	if err != nil {
 		panic(err)
 	}
+	os.Exit(status.Fail)
 }
 
 func readStatus(statusFile string) *Status {
