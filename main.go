@@ -77,7 +77,7 @@ func buildSlackMsg(flags *cmdFlags) (*slack.Attachment, int) {
 
 	line1 := fmt.Sprintf("")
 	line2 := fmt.Sprintf("\nTOTAL: %v", status.Total)
-	line3 := fmt.Sprintf("\n:white_check_mark:PASS: %d		:x:FAIL: %d		:leftwards_arrow_with_hook:SKIP: %d", status.Pass, status.Fail, status.Skip)
+	line3 := fmt.Sprintf("\nPASS: %d		FAIL: %d		SKIP: %d", status.Pass, status.Fail, status.Skip)
 	message := line1 + line2 + line3
 	attachment := slack.Attachment{
 		Title:     fmt.Sprintf("Agni E2E Report"),
