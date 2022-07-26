@@ -54,47 +54,41 @@ func initRootCommand() *cobra.Command {
 }
 
 func sendSlack(flags *cmdFlags) {
-	status := readStatus(flags.inputFile)
+
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	channelID := os.Getenv("SLACK_CHANNEL_ID")
 
 	client := slack.New(token, slack.OptionDebug(true))
 
-	header := slack.Attachment{
-		Pretext: fmt.Sprintf(":fire:  Agni E2E Report : <%s> ", flags.resultURL),
-		Text:    time.Now().Format(time.ANSIC),
-		Color:   "#b380ff",
-	}
-
-	total := slack.Attachment{
-		Color: "#b380ff",
-		Text:  fmt.Sprintf("TOTAL : %d", status.Total),
-	}
-	pass := slack.Attachment{
-		Color: "#33cc33",
-		Text:  fmt.Sprintf("PASS : %d", status.Pass),
-		// Pretext: ":large_green_square: 10",
-	}
-	fail := slack.Attachment{
-		Color: "#cc0000",
-		Text:  fmt.Sprintf("FAIL : %d", status.Fail),
-		// Pretext: ":large_red_square: 10",
-	}
-	skip := slack.Attachment{
-		Color: "#cccccc",
-		Text:  fmt.Sprintf("SKIP : %d", status.Skip),
-		// Pretext: ":large_yellow_square: 10",
-	}
-
-	_, _, err := client.PostMessage(
+	attachment, status := buildSlackMsg(flags)
+	_, _, _, err := client.SendMessage(
 		channelID,
-		slack.MsgOptionAttachments(header, total, pass, skip, fail),
+		slack.MsgOptionAttachments(*attachment),
 	)
 
 	if err != nil {
 		panic(err)
 	}
-	os.Exit(status.Fail)
+	os.Exit(status)
+}
+
+func buildSlackMsg(flags *cmdFlags) (*slack.Attachment, int) {
+	status := readStatus(flags.inputFile)
+
+	line1 := fmt.Sprintf("")
+	line2 := fmt.Sprintf("\nTOTAL: %v", status.Total)
+	line3 := fmt.Sprintf("\n:white_check_mark:PASS: %d		:x:FAIL: %d		:leftwards_arrow_with_hook:SKIP: %d", status.Pass, status.Fail, status.Skip)
+	message := line1 + line2 + line3
+	attachment := slack.Attachment{
+		Title:     fmt.Sprintf("Agni E2E Report"),
+		TitleLink: flags.resultURL,
+		Text:      message,
+		Color:     "#b380ff",
+		Fields: []slack.AttachmentField{
+			{}},
+		Footer: fmt.Sprintf("%v", time.Now().Format("02 Jan 06 15:04 MST")),
+	}
+	return &attachment, status.Fail
 }
 
 func readStatus(statusFile string) *Status {
