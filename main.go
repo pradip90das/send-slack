@@ -69,7 +69,7 @@ func initRootCommand() *cobra.Command {
 func sendSlack(flags *cmdFlags) {
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
-	channelID := os.Getenv("SLACK_CHANNEL_ID")
+	channelID := os.Getenv("SLACK_CHANNEL_NAME")
 
 	client := slack.New(token, slack.OptionDebug(true))
 
@@ -92,12 +92,16 @@ func buildSlackMsg(flags *cmdFlags) (*slack.Attachment, int) {
 	line2 := fmt.Sprintf("\nTotal: %v", status.Total)
 	line3 := fmt.Sprintf("\nPass: %d		Fail: %d		Skip: %d", status.Pass, status.Fail, status.Skip)
 	message := line1 + line2 + line3
+	color := "#2d8659"
+	if status.Total == 0 || status.Fail > 0 {
+		color = "#b30000"
+	}
 	attachment := slack.Attachment{
 		Pretext: fmt.Sprintf("*%s* on %s", flags.headerText, strings.Split(flags.clusterURL, "//")[1]),
 		// Title:     fmt.Sprintf("Cluster : %s", strings.Split(flags.clusterURL, "//")[1]),
 		// TitleLink: flags.clusterURL,
 		Text:  message,
-		Color: "#b380ff",
+		Color: color,
 		Fields: []slack.AttachmentField{
 			{}},
 		Footer: fmt.Sprintf("%v", time.Now().Format("02 Jan 06 15:04 MST")),
