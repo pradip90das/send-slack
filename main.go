@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/slack-go/slack"
@@ -18,8 +19,10 @@ type Status struct {
 	Skip  int `json:"skip,omitempty"`
 }
 type cmdFlags struct {
-	inputFile string
-	resultURL string
+	inputFile  string
+	resultURL  string
+	clusterURL string
+	headerText string
 }
 
 func main() {
@@ -50,6 +53,16 @@ func initRootCommand() *cobra.Command {
 		"u",
 		"",
 		"result url")
+	rootCmd.PersistentFlags().StringVarP(&flags.clusterURL,
+		"cluster",
+		"c",
+		"",
+		"cluster url")
+	rootCmd.PersistentFlags().StringVarP(&flags.headerText,
+		"header",
+		"t",
+		"",
+		"header text")
 	return rootCmd
 }
 
@@ -75,15 +88,16 @@ func sendSlack(flags *cmdFlags) {
 func buildSlackMsg(flags *cmdFlags) (*slack.Attachment, int) {
 	status := readStatus(flags.inputFile)
 
-	line1 := fmt.Sprintf("")
-	line2 := fmt.Sprintf("\nTOTAL: %v", status.Total)
-	line3 := fmt.Sprintf("\nPASS: %d		FAIL: %d		SKIP: %d", status.Pass, status.Fail, status.Skip)
+	line1 := fmt.Sprintf("\nReport: <%s|View>", flags.resultURL)
+	line2 := fmt.Sprintf("\nTotal: %v", status.Total)
+	line3 := fmt.Sprintf("\nPass: %d		Fail: %d		Skip: %d", status.Pass, status.Fail, status.Skip)
 	message := line1 + line2 + line3
 	attachment := slack.Attachment{
-		Title:     fmt.Sprintf("Agni E2E Report"),
-		TitleLink: flags.resultURL,
-		Text:      message,
-		Color:     "#b380ff",
+		Pretext: fmt.Sprintf("*%s* on %s", flags.headerText, strings.Split(flags.clusterURL, "//")[1]),
+		// Title:     fmt.Sprintf("Cluster : %s", strings.Split(flags.clusterURL, "//")[1]),
+		// TitleLink: flags.clusterURL,
+		Text:  message,
+		Color: "#b380ff",
 		Fields: []slack.AttachmentField{
 			{}},
 		Footer: fmt.Sprintf("%v", time.Now().Format("02 Jan 06 15:04 MST")),
